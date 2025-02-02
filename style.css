@@ -1,0 +1,14 @@
+#gameboard-container {
+    display: grid;
+    width: min-content;
+    height: min-content;
+    gap: 10px;
+    grid-template-rows: 1fr 1fr 1fr;
+    grid-template-columns: 1fr 1fr 1fr;
+}
+
+.tile {
+    width: 100px;
+    height: 100px;
+    background: #d6d6d6;
+}

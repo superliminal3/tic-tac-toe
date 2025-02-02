@@ -17,18 +17,22 @@ const game = (function() {
 
 const gameStatus = (function(gameObj) {
     const i_parent = this;
-    stopGame = (n) => {
-        play(10, n);
-    };
+    let canPlay = true;
+    let roundCounter = 0;
 
     const checkGame = () => {
-        const gameboardState = game.getGameboardState();
+        if (roundCounter === 8) {
+            declareWinner(3);
+        }
+        roundCounter++;
 
-        const compare = (n1, n2, n3) => {
-            if (n1 === n2 && n2 === n3 && n3 === 1) {
+        const gameboardState = gameObj.getGameboardState();
+
+        const compare = (arr) => {
+            if (arr[0] === arr[1] && arr[1] === arr[2] && arr[2] === 1) {
                 return 1;
             };
-            if (n1 === n2 && n2 === n3 && n3 === 2) {
+            if (arr[0] === arr[1] && arr[1] === arr[2] && arr[2] === 2) {
                 return 2;
             };
             return 0;
@@ -39,71 +43,82 @@ const gameStatus = (function(gameObj) {
             checkTableDivided = Array.from(a[i]).map((v) => parseInt(v));
             gameboardIndexed = [];
             checkTableDivided.forEach((v) => gameboardIndexed.push(gameboardState[v]));
-            winner = compare(gameboardIndexed[0], gameboardIndexed[1], gameboardIndexed[2])
+            console.log(compare(gameboardIndexed));
+            winner = compare(gameboardIndexed);
+
             switch (winner) {
-                case 1: i_parent.stopGame(1); break;
-                case 2: i_parent.stopGame(2); break;
+                case 1: i_parent.declareWinner(1); break;
+                case 2: i_parent.declareWinner(2); break;
                 default: break;
             };
         });
     };
-
-    let i = 0;
+    
     play = (pos, playerNumber) => {
-        if (pos === 10) {
-            declareWinner(playerNumber);
-            i = 9;
-        } else {
-            if (i < 8) {
-                gameObj.changeGameboardState(pos, playerNumber);
-                checkGame();
-                i++;
-            }
-            if (i === 8) {
-                declareWinner(3);
-            }
+        if (!!canPlay) {
+            gameObj.changeGameboardState(pos, playerNumber);
+            checkGame();
         }
     };
 
     declareWinner = (playerNumber) => {
-        if (playerNumber === 3) {
-            console.log("tie");
-        } else {
-            console.log(playerNumber + " is the winner");
+        canPlay = false;
+        switch (playerNumber) {
+            case 1: case 2: console.log(playerNumber + " is the winner"); break;
+            case 3: console.log("tie");
         }
-
     };
 
-    return {play};
+    getCanPlay = () => {
+        return canPlay;
+    }
+
+    return {play, getCanPlay};
 })(game);
 
-const player1 = (function(gameStatusObj) {
-    const play = (pos) => {
+const gameboardContainer = document.querySelector("#gameboard-container");
+
+function spawnTiles() {
+    const tiles = [];
+    for (let z = 0; z < 9; z++) {
+        tiles[z] = document.createElement("div");
+        tiles[z].addEventListener("click", () => {
+            tiles[z].textContent = activePlayer.get();
+            activePlayer.play(z);
+        });
+        tiles[z].setAttribute("class", "tile");
+        gameboardContainer.appendChild(tiles[z]);
+    }
+}
+
+const activePlayer = (function(gameStatusObj) {
+    nr = 1;
+
+    play = (pos) => {
         if (game.getGameboardState()[pos] === 0) {
-            gameStatus.play(pos, 1);
+            gameStatus.play(pos, nr);
+            swap();
         }
-        console.log(pos);
     };
 
-    return {play};
-})(gameStatus);
-
-const player2 = (function(gameStatusObj) {
-    const play = (pos) => {
-        if (game.getGameboardState()[pos] === 0) {
-            gameStatus.play(pos, 2);
+    swap = () => {
+        if (nr === 2) {
+            nr--;
+        } else if (nr === 1) {
+            nr++;
         }
-        console.log(pos);
-    };
+    }
 
-    return {play};
+    get = () => {
+        if (gameStatusObj.getCanPlay() === true) {
+            return nr;
+        } else {
+            return "";
+        }
+    }
+
+    return {play, get, swap};
 })(gameStatus);
 
-player1.play(8);
-player2.play(1);
-player1.play(4);
-player2.play(0);
-player1.play(6);
-player2.play(2);
-player1.play(5);
-player2.play(3);
+
+spawnTiles();
