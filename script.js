@@ -43,7 +43,6 @@ const gameStatus = (function(gameObj) {
             checkTableDivided = Array.from(a[i]).map((v) => parseInt(v));
             gameboardIndexed = [];
             checkTableDivided.forEach((v) => gameboardIndexed.push(gameboardState[v]));
-            console.log(compare(gameboardIndexed));
             winner = compare(gameboardIndexed);
 
             switch (winner) {
@@ -61,41 +60,35 @@ const gameStatus = (function(gameObj) {
         }
     };
 
+    let winner = 0;
+
     declareWinner = (playerNumber) => {
         canPlay = false;
         switch (playerNumber) {
-            case 1: case 2: console.log(playerNumber + " is the winner"); break;
-            case 3: console.log("tie");
+            case 1: case 2: winner = playerNumber; break;
+            case 3: winner = 3; break;
+            default: break;
         }
+        console.log(winner);
     };
 
-    getCanPlay = () => {
+    const getWinner = () => {
+        console.log(winner);
+        return winner;
+    }
+
+    const getCanPlay = () => {
         return canPlay;
     }
 
-    return {play, getCanPlay};
+    return {play, getCanPlay, getWinner};
 })(game);
-
-const gameboardContainer = document.querySelector("#gameboard-container");
-
-function spawnTiles() {
-    const tiles = [];
-    for (let z = 0; z < 9; z++) {
-        tiles[z] = document.createElement("div");
-        tiles[z].addEventListener("click", () => {
-            tiles[z].textContent = activePlayer.get();
-            activePlayer.play(z);
-        });
-        tiles[z].setAttribute("class", "tile");
-        gameboardContainer.appendChild(tiles[z]);
-    }
-}
 
 const activePlayer = (function(gameStatusObj) {
     nr = 1;
 
     play = (pos) => {
-        if (game.getGameboardState()[pos] === 0) {
+        if (game.getGameboardState()[pos] === 0 && !!gameStatusObj.getCanPlay()) {
             gameStatus.play(pos, nr);
             swap();
         }
@@ -110,15 +103,70 @@ const activePlayer = (function(gameStatusObj) {
     }
 
     get = () => {
-        if (gameStatusObj.getCanPlay() === true) {
-            return nr;
+        if (!!gameStatusObj.getCanPlay()) {
+            switch (nr) {
+                case 1: return "O";
+                case 2: return "X";
+            }
         } else {
             return "";
         }
     }
 
-    return {play, get, swap};
+    getNr = () => nr;
+
+    return {play, get, swap, getNr};
 })(gameStatus);
 
+const display = (function(activePlayerObj, gameStatusObj) {
+    const topContainer = document.querySelector("#top-container");
+
+    const currentPlayerDisplay = document.createElement("div");
+    const winnerDisplay = document.createElement("div");
+
+    currentPlayerDisplay.setAttribute("class", "top-display");
+    winnerDisplay.setAttribute("class", "top-display");
+
+    refreshWinnerDisplay = () => {
+        let winner = gameStatusObj.getWinner();
+        switch (winner) {
+            case 1: case 2: winnerDisplay.textContent = winner + " is the winner"; break;
+            case 3: winnerDisplay.textContent = "no winner"; break;
+            default: winnerDisplay.textContent = ""; break;
+        }
+    }
+
+    refreshCurrentPlayerDisplay = () => {
+        currentPlayerDisplay.textContent = "Current player: " + activePlayerObj.getNr();
+    }
+
+    init = () => {
+        topContainer.appendChild(currentPlayerDisplay);
+        topContainer.appendChild(winnerDisplay);
+        currentPlayerDisplay.textContent = "Current player: " + activePlayerObj.getNr();
+        winnerDisplay.textContent = "";
+
+    }
+
+    return {init, refreshWinnerDisplay, refreshCurrentPlayerDisplay}
+})(activePlayer, gameStatus);
+
+const gameboardContainer = document.querySelector("#gameboard-container");
+display.init();
+
+function spawnTiles() {
+    const tiles = [];
+    for (let z = 0; z < 9; z++) {
+        tiles[z] = document.createElement("div");
+        tiles[z].addEventListener("click", () => {
+            tiles[z].textContent = activePlayer.get();
+            activePlayer.play(z);
+            display.refreshCurrentPlayerDisplay();
+            display.refreshWinnerDisplay();
+        });
+        tiles[z].setAttribute("class", "tile");
+        gameboardContainer.appendChild(tiles[z]);
+    }
+}
 
 spawnTiles();
